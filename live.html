@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Safe Journey</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { margin:0; font-family: Arial, sans-serif; background:#121212; color:white; }
+    #map { height: 90vh; width: 100%; }
+    
+
+    .controls {
+      padding: 10px;
+      background: #1f1f1f;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      align-items: center;
+    }
+    .controls input {
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+      width: 200px;
+    }
+    .controls button {
+      background: #ff9800;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s;
+    }
+    .controls button:hover { background: #e68900; transform: scale(1.1); }
+    .controls button i { color: rgb(255, 255, 255); font-size: 18px; }
+
+    .leaflet-routing-container { background: rgb(199, 85, 85) !important; color: white !important; }
+
+    .sidebar {
+      height: 100%;
+      width: 0;
+      position: fixed;
+      top: 0; left: 0;
+      background: #222;
+      overflow-x: hidden;
+      transition: 0.3s;
+      padding-top: 60px;
+      z-index: 2000;
+      color: white;
+    }
+    .sidebar h2 { padding-left: 15px; font-size: 18px; }
+    .sidebar a {
+      padding: 10px 15px;
+      display: block;
+      text-decoration: none;
+      font-size: 16px;
+      color: white;
+      transition: 0.3s;
+      white-space: nowrap;
+    }
+    .sidebar a:hover { background: #444; }
+
+    .hamburger {
+      position: fixed;
+      top: 15px; left: 15px;
+      z-index: 3000;
+      cursor: pointer;
+      font-size: 26px;
+      color: white;
+      background: #333;
+      padding: 8px 12px;
+      border-radius: 6px;
+      user-select: none;
+      transition: background 0.3s;
+    }
+    .hamburger:hover { background: #555; }
+
+    h2.animated-heading {
+      text-align: center;
+      padding: 10px;
+      font-size: 28px;
+      color: rgb(36, 151, 46);
+      animation: redWhiteGlow 2s infinite alternate;
+    }
+    @keyframes redWhiteGlow {
+      0% { color: red; text-shadow: 0 0 5px red, 0 0 10px red; }
+      100% { color: white; text-shadow: 0 0 10px white, 0 0 20px white; }
+    }
+    
+
+    .popup {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #333;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      font-size: 16px;
+      z-index: 4000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s, transform 0.5s;
+      transform: translateY(-20px);
+    }
+    .popup.show {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+    .popup.success { background: #4caf50; }
+    .popup.warning { background: #f44336; }
+  
+  /* Make the routing panel background white and all text black */
+  .leaflet-routing-container {
+    background: white !important;  /* panel background */
+    color: black !important;       /* all text inside */
+  }
+
+  /* Make all headings inside routing instructions black */
+  .leaflet-routing-container h2,
+  .leaflet-routing-container h3,
+  .leaflet-routing-container a,
+  .leaflet-routing-container span {
+    color: black !important;
+  }
+
+  /* Make instruction arrows black */
+  .leaflet-routing-instruction {
+    color: black !important;
+  }
+
+  /* Optional: scroll bar styling */
+  .leaflet-routing-container::-webkit-scrollbar {
+    width: 8px;
+  }
+  .leaflet-routing-container::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 4px;
+  }
+
+
+  </style>
+</head>
+<body>
+
+  <div class="hamburger" onclick="toggleSidebar()">&#9776;</div>
+
+  <div id="mySidebar" class="sidebar">
+    <h2>Features</h2>
+    <a href ="sample.html">Home</a>
+    <a href="live.html">Disaster zone detection </a>
+   
+     <a href="NATIONAL.HTML">National border alert </a>
+    <a href="ambulance.html">Emergency services locator </a>
+  </div>
+
+  <h2 class="animated-heading">🛡️ Your Safety is Our First Priority</h2>
+
+  <div class="controls">
+    <input type="text" id="source" placeholder="Enter Source">
+    <input type="text" id="destination" placeholder="Enter Destination">
+    <button onclick="findRoute()"><i class="fas fa-search"></i></button>
+  </div>
+
+  <div id="map"></div>
+  <div id="popup" class="popup"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+
+  <script>
+    var map = L.map('map').setView([22.57, 88.36], 6);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    var hazardZone = L.circle([22.57, 88.36], {
+      radius: 20000,
+      color: "red",
+      fillColor: "#f03",
+      fillOpacity: 0.4
+    }).addTo(map).bindPopup("⚠️ Hazard Area (Flood)");
+
+    var control = null;
+
+    function showPopup(message, type) {
+      const popup = document.getElementById('popup');
+      popup.innerHTML = message;
+      popup.className = `popup show ${type}`;
+      setTimeout(() => { popup.className = 'popup'; }, 5000);
+    }
+
+    async function findRoute() {
+      let src = document.getElementById("source").value.trim();
+      let dest = document.getElementById("destination").value.trim();
+
+      if (!src || !dest) {
+        showPopup("Please enter both Source and Destination.", "warning");
+        return;
+      }
+
+      try {
+        let [srcData, destData] = await Promise.all([
+          fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(src)}`).then(res => res.json()),
+          fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(dest)}`).then(res => res.json())
+        ]);
+
+        if (!Array.isArray(srcData) || !srcData.length) {
+          showPopup("Invalid Source! Place not found.", "warning");
+          return;
+        }
+        if (!Array.isArray(destData) || !destData.length) {
+          showPopup("Invalid Destination! Place not found.", "warning");
+          return;
+        }
+
+        let srcCoords = [parseFloat(srcData[0].lat), parseFloat(srcData[0].lon)];
+        let destCoords = [parseFloat(destData[0].lat), parseFloat(destData[0].lon)];
+
+        if (control) map.removeControl(control);
+
+        let distanceFromHazard = map.distance(srcCoords, hazardZone.getLatLng());
+        let routeOptions = {
+          waypoints: [L.latLng(srcCoords[0], srcCoords[1]), L.latLng(destCoords[0], destCoords[1])],
+          routeWhileDragging: true,
+          show: true
+        };
+
+        if (distanceFromHazard < hazardZone.getRadius()) {
+          if (confirm("⚠️ Hazard detected on this route! Do you want an alternate route?")) {
+            // Redirect to alternate.html with coordinates
+            window.location.href = `alternate.html?srcLat=${srcCoords[0]}&srcLng=${srcCoords[1]}&destLat=${destCoords[0]}&destLng=${destCoords[1]}`;
+            return;
+          } else {
+            showPopup("⚠️ Hazard detected! Proceed with caution.", "warning");
+          }
+        } else {
+          showPopup("✅ Safe journey! Have a good trip.", "success");
+        }
+
+        control = L.Routing.control(routeOptions).addTo(map);
+
+      } catch (error) {
+        showPopup("Network or API error!", "warning");
+        console.error(error);
+      }
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById("mySidebar");
+      sidebar.style.width = (sidebar.style.width === "250px") ? "0" : "250px";
+    }
+  </script>
+</body>
+</html>
