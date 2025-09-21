@@ -1,0 +1,81 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #121212;
+  color: white;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+#map { flex: 1; }
+
+.controls {
+  padding: 10px;
+  background: #1a1a1a;
+  color: white;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1000;
+}
+input, button, select {
+  padding: 6px;
+  border-radius: 5px;
+  border: 1px solid #555;
+  background: #2a2a2a;
+  color: white;
+}
+
+/* Sidebar */
+.sidebar {
+  height: 100%;
+  width: 0;
+  position: fixed;
+  top: 0; left: 0;
+  background: #222;
+  overflow-x: hidden;
+  transition: 0.3s;
+  padding-top: 60px;
+  z-index: 2000;
+  color: white;
+}
+.sidebar h2 { padding-left: 15px; font-size: 18px; }
+.sidebar a {
+  padding: 10px 15px;
+  display: block;
+  text-decoration: none;
+  font-size: 16px;
+  color: white;
+}
+.sidebar a:hover { background: #444; }
+
+/* Hamburger */
+.hamburger {
+  position: fixed;
+  top: 15px; left: 15px;
+  z-index: 3000;
+  cursor: pointer;
+  font-size: 26px;
+  color: white;
+  background: #333;
+  padding: 8px 12px;
+  border-radius: 6px;
+  user-select: none;
+}
+
+#distanceBox {
+  position: absolute;
+  top: 60px; right: 20px;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  z-index: 1000;
+}
+
+/* Force black text for routing directions */
+.leaflet-routing-container, .leaflet-routing-container * {
+  color: black !important;
+  font-weight: 500;
+}

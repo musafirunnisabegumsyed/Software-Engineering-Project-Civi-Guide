@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Safe Journey</title>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/live.css') }}">
+</head>
+<body>
+
+  <div class="hamburger" onclick="toggleSidebar()">&#9776;</div>
+
+  <div id="mySidebar" class="sidebar">
+    <h2>Features</h2>
+    <a href="sample.html">Home</a>
+    <a href="live.html">Disaster zone detection</a>
+    <a href="NATIONAL.HTML">National border alert</a>
+    <a href="ambulance.html">Emergency services locator</a>
+  </div>
+
+  <h2 class="animated-heading">🛡️ Your Safety is Our First Priority</h2>
+
+  <div class="controls">
+    <input type="text" id="source" placeholder="Enter Source">
+    <input type="text" id="destination" placeholder="Enter Destination">
+    <button onclick="findRoute()"><i class="fas fa-search"></i></button>
+  </div>
+
+  <div id="map"></div>
+  <div id="popup" class="popup"></div>
+
+  <!-- JS Libraries -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+
+  <!-- Custom JS -->
+  <script src="{{ url_for('static', path='js/live.js') }}"></script>
+</body>
+</html>

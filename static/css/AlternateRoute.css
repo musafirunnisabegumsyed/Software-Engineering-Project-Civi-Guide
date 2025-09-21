@@ -1,0 +1,85 @@
+body { 
+  margin: 0; 
+  font-family: Arial, sans-serif; 
+  background: #121212; 
+  color: white; 
+}
+
+#map { 
+  height: 100vh; 
+  width: 100%; 
+}
+
+h2 {
+  text-align: center; 
+  padding: 10px; 
+  color: #ff9800;
+}
+
+/* Sidebar styling */
+.sidebar {
+  height: 100%;
+  width: 0;
+  position: fixed;
+  top: 0; left: 0;
+  background: #222;
+  overflow-x: hidden;
+  transition: 0.3s;
+  padding-top: 60px;
+  z-index: 2000;
+  color: white;
+}
+.sidebar h2 { padding-left: 15px; font-size: 18px; }
+.sidebar a {
+  padding: 10px 15px;
+  display: block;
+  text-decoration: none;
+  font-size: 16px;
+  color: white;
+  transition: 0.3s;
+  white-space: nowrap;
+}
+.sidebar a:hover { background: #444; }
+
+.hamburger {
+  position: fixed;
+  top: 15px; left: 15px;
+  z-index: 3000;
+  cursor: pointer;
+  font-size: 26px;
+  color: white;
+  background: #333;
+  padding: 8px 12px;
+  border-radius: 6px;
+  user-select: none;
+  transition: background 0.3s;
+}
+.hamburger:hover { background: #555; }
+
+/* Routing panel dark theme */
+.leaflet-routing-container {
+  background: #121212 !important;
+  color: white !important;
+  border: 1px solid #333 !important;
+}
+
+/* Routing instructions hover red */
+.leaflet-routing-container .leaflet-routing-instructions li {
+  color: white !important;
+  transition: background 0.3s, color 0.3s;
+}
+
+.leaflet-routing-container .leaflet-routing-instructions li:hover {
+  background: #b71c57 !important; /* red background */
+  color: white !important;
+  cursor: pointer;
+}
+
+/* Scrollbar */
+.leaflet-routing-container::-webkit-scrollbar {
+  width: 8px;
+}
+.leaflet-routing-container::-webkit-scrollbar-thumb {
+  background-color: #555;
+  border-radius: 4px;
+}
