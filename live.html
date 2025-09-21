@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Safe Journey</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  body { margin:0; font-family: Arial, sans-serif; background:#121212; color:white; overflow-x:hidden; }
+  #map { height: 85vh; width: 100%; }
+  .hamburger { position: fixed; top:15px; left:15px; z-index:3000; cursor:pointer; font-size:26px; color:white; background:#333; padding:8px 12px; border-radius:6px; transition:0.3s; }
+  .hamburger:hover { background:#00ffff; color:#111; transform:scale(1.1); }
+  .sidebar { height:100%; width:0; position:fixed; top:0; left:0; background:#222; overflow-x:hidden; transition:0.3s; padding-top:60px; z-index:2000; color:white; box-shadow:2px 0 10px rgba(0,0,0,0.7); }
+  .sidebar h2,.sidebar h3{ padding-left:15px; color:#00ffff; margin-bottom:10px; }
+  .sidebar a { display:flex; align-items:center; gap:10px; padding:12px 15px; text-decoration:none; font-size:16px; color:white; border-radius:6px; transition:0.3s; }
+  .sidebar a:hover { background:#00ffff; color:#111; font-weight:bold; transform:scale(1.05); }
+  .sidebar ul { list-style:none; padding-left:25px; }
+  .sidebar ul li { margin-bottom:10px; }
+  .badge { padding:3px 8px; border-radius:6px; font-weight:bold; margin-left:5px; }
+  .green { background:#4CAF50; color:white; }
+  .blue { background:#2196F3; color:white; }
+  .red { background:#f44336; color:white; }
+  .yellow { background:#FFC107; color:black; }
+  .quote-card { background:#333; padding:12px 15px; border-radius:10px; margin:0 15px 15px; font-style:italic; color:#ffeb3b; box-shadow:0 4px 10px rgba(0,0,0,0.5); }
+  h2.animated-heading { text-align:center; padding:10px; font-size:28px; color:#ff9800; animation: glow 2s infinite alternate; }
+  @keyframes glow { 0% { color:#ff9800; text-shadow:0 0 5px #ff9800; } 100% { color:white; text-shadow:0 0 10px white; } }
+  .controls { padding:10px; background:#1f1f1f; display:flex; justify-content:center; gap:10px; align-items:center; }
+  .controls input { padding:8px; border-radius:6px; border:none; width:180px; background:#222; color:white; }
+  .controls button { background:#00ffff; border:none; border-radius:50%; width:40px; height:40px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:transform 0.2s; }
+  .controls button:hover { background:#ffeb3b; transform:scale(1.1); }
+  .controls button i { color:#111; font-size:18px; }
+  .popup { position:fixed; top:20px; right:20px; background:#333; color:white; padding:15px 20px; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.5); font-size:16px; z-index:4000; opacity:0; pointer-events:none; transition: opacity 0.5s, transform 0.5s; transform:translateY(-20px); }
+  .popup.show { opacity:1; pointer-events:auto; transform:translateY(0); }
+  .popup.success { background:#4caf50; }
+  .popup.warning { background:#f44336; }
+  .leaflet-routing-container, .leaflet-routing-container * { color:black !important; }
+  /* Sidebar */
+  .sidebar {
+    height: 100%;
+    width: 0;
+    position: fixed;
+    top: 0; left: 0;
+    background: linear-gradient(145deg, #111, #222);
+    overflow-x: hidden;
+    transition: 0.3s;
+    padding-top: 60px;
+    z-index: 2000;
+    color: white;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.7);
+    border-right: 1px solid #333;
+  }
+  .sidebar h2, .sidebar h3 {
+    padding-left: 15px;
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #00ffff;
+  }
+  .sidebar a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    text-decoration: none;
+    font-size: 16px;
+    color: white;
+    transition: 0.3s ease;
+    border-radius: 6px;
+  }
+  .sidebar a:hover {
+    background: #00ffff;
+    color: #111;
+    font-weight: bold;
+    transform: scale(1.05);
+  }
+  .sidebar a i {
+    width: 24px;
+    text-align: center;
+    font-size: 18px;
+    color: #00ffff;
+  }
+  .sidebar ul { list-style: none; padding: 0; margin: 0 0 15px 15px; line-height: 1.8; }
+  .sidebar p { padding: 0 15px 15px 15px; font-style: italic; color: #ddd; }
+  .badge { padding: 3px 8px; border-radius: 6px; font-weight: bold; margin-left: 5px; }
+  .green { background:#4CAF50; color:white; }
+  .blue { background:#2196F3; color:white; }
+  .red { background:#f44336; color:white; }
+  .yellow { background:#FFC107; color:black; }
+  .quote-card {
+    background: #333;
+    padding: 12px 15px;
+    border-radius: 10px;
+    margin: 0 15px 15px 15px;
+    font-style: italic;
+    color: #ffeb3b;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  }
+
+  /* Hamburger */
+    .hamburger {
+      position: fixed;
+      top: 15px; left: 15px;
+      z-index: 3000;
+      cursor: pointer;
+      font-size: 28px;
+      color: #00ffff;
+      background: #222;
+      padding: 10px 14px;
+      border-radius: 8px;
+      user-select: none;
+      transition: 0.3s;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    .hamburger:hover { background: #ffeb3b; color: #111; transform: scale(1.1); }
+</style>
+</head>
+<body>
+
+<div class="hamburger" onclick="toggleSidebar()">&#9776;</div>
+
+<!-- Sidebar -->
+    <div id="mySidebar" class="sidebar">
+      <h2>Features</h2>
+      <a href="home.html"><i class="fas fa-home"></i> Home</a>
+      <a href="live.html"><i class="fa-solid fa-triangle-exclamation"></i> Disaster Zone Detection</a>
+      <a href="alternate.html"><i class="fa-solid fa-route"></i> Alternate Route Suggestion</a>
+      <a href="borderalert.HTML"><i class="fa-solid fa-map"></i> National Border Alert</a>
+      <a href="emergence.html"><i class="fa-solid fa-ambulance"></i> Emergency Services Locator</a>
+      <a href="safetytip.html"><i class="fa-solid fa-shield-halved"></i> Safety Tips & Guides</a>
+
+      <hr style="border:1px solid #444; margin:20px 0;">
+      <h3>Emergency Numbers</h3>
+      <ul>
+        <li>🚑 Ambulance: <span class="badge green">108 / 102</span></li>
+        <li>👮 Police: <span class="badge blue">100</span></li>
+        <li>🔥 Fire: <span class="badge red">101</span></li>
+        <li>🌐 NDRF: <span class="badge yellow">1078</span></li>
+      </ul>
+
+      <hr style="border:1px solid #444; margin:20px 0;">
+      <h3>Quote of the Day</h3>
+      <div class="quote-card">"Preparedness today saves lives tomorrow."</div>
+    </div>
+
+<h2 class="animated-heading">🛡️ Your Safety is Our First Priority</h2>
+
+<div class="controls">
+  <input type="text" id="source" placeholder="Enter Source">
+  <button onclick="swapLocations()"><i class="fas fa-exchange-alt"></i></button>
+  <input type="text" id="destination" placeholder="Enter Destination">
+  <button onclick="findRoute()"><i class="fas fa-search"></i></button>
+  <button id="micButton"><i class="fas fa-microphone"></i></button>
+</div>
+
+<div id="map"></div>
+<div id="popup" class="popup"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+<script>
+var map = L.map('map').setView([22.57, 88.36], 6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'© OpenStreetMap contributors' }).addTo(map);
+
+var hazardZone = L.circle([22.57,88.36], {radius:20000,color:"red",fillColor:"#f03",fillOpacity:0.4}).addTo(map).bindPopup("⚠️ Hazard Area (Flood)");
+var control = null;
+
+function showPopup(message,type){
+  const popup=document.getElementById('popup');
+  popup.innerHTML=message;
+  popup.className=`popup show ${type}`;
+  setTimeout(()=>{popup.className='popup';},5000);
+}
+
+async function findRoute(){
+  let src=document.getElementById("source").value.trim();
+  let dest=document.getElementById("destination").value.trim();
+  if(!src||!dest){showPopup("Please enter both Source and Destination.","warning"); return;}
+
+  try{
+    let [srcData,destData]=await Promise.all([
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(src)}`).then(r=>r.json()),
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(dest)}`).then(r=>r.json())
+    ]);
+
+    if(!srcData.length){showPopup("Invalid Source!","warning"); return;}
+    if(!destData.length){showPopup("Invalid Destination!","warning"); return;}
+
+    let srcCoords=[parseFloat(srcData[0].lat),parseFloat(srcData[0].lon)];
+    let destCoords=[parseFloat(destData[0].lat),parseFloat(destData[0].lon)];
+
+    if(control) map.removeControl(control);
+
+    control=L.Routing.control({
+      waypoints:[L.latLng(srcCoords[0],srcCoords[1]),L.latLng(destCoords[0],destCoords[1])],
+      routeWhileDragging:true,
+      show:true
+    }).addTo(map);
+
+    // Hazard check
+    let distanceFromHazard=map.distance(srcCoords,hazardZone.getLatLng());
+    if(distanceFromHazard<hazardZone.getRadius()){
+      showPopup("⚠️ Hazard detected! Do you want an alternate route?", "warning");
+      if(confirm("⚠️ Hazard detected! Do you want an alternate route?")) {
+        localStorage.setItem("srcLat", srcCoords[0]);
+        localStorage.setItem("srcLng", srcCoords[1]);
+        localStorage.setItem("destLat", destCoords[0]);
+        localStorage.setItem("destLng", destCoords[1]);
+        window.location.href = "alternate.html";
+      }
+    } else {
+      showPopup("✅ Safe journey!","success");
+    }
+
+  }catch(err){showPopup("Network or API error!","warning"); console.error(err);}
+}
+
+function swapLocations(){
+  let s=document.getElementById('source');
+  let d=document.getElementById('destination');
+  [s.value,d.value]=[d.value,s.value];
+}
+
+document.getElementById('micButton').onclick=function(){
+  if(!control){ showPopup("No route loaded.","warning"); return; }
+  let utter=new SpeechSynthesisUtterance("Route loaded. Follow instructions carefully.");
+  utter.lang='en-US';
+  window.speechSynthesis.speak(utter);
+}
+
+function toggleSidebar(){
+  const sidebar=document.getElementById("mySidebar");
+  sidebar.style.width=(sidebar.style.width==="250px")?"0":"250px";
+}
+</script>
+</body>
+</html>

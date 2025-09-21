@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Civi Guide - Emergency Services</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<style>
+  body, html {
+    margin:0; padding:0; height:100%; font-family:Arial,sans-serif; background:#121212; color:white; overflow:hidden;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    height: 100%;
+    width: 0;
+    position: fixed;
+    top: 0; left: 0;
+    background: linear-gradient(145deg, #111, #222);
+    overflow-x: hidden;
+    transition: 0.3s;
+    padding-top: 60px;
+    z-index: 2000;
+    color: white;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.7);
+    border-right: 1px solid #333;
+  }
+  .sidebar h2, .sidebar h3 {
+    padding-left: 15px;
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #00ffff;
+  }
+  .sidebar a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    text-decoration: none;
+    font-size: 16px;
+    color: white;
+    transition: 0.3s ease;
+    border-radius: 6px;
+  }
+  .sidebar a:hover {
+    background: #00ffff;
+    color: #111;
+    font-weight: bold;
+    transform: scale(1.05);
+  }
+  .sidebar a i {
+    width: 24px;
+    text-align: center;
+    font-size: 18px;
+    color: #00ffff;
+  }
+  .sidebar ul { list-style: none; padding: 0; margin: 0 0 15px 15px; line-height: 1.8; }
+  .sidebar p { padding: 0 15px 15px 15px; font-style: italic; color: #ddd; }
+  .badge { padding: 3px 8px; border-radius: 6px; font-weight: bold; margin-left: 5px; }
+  .green { background:#4CAF50; color:white; }
+  .blue { background:#2196F3; color:white; }
+  .red { background:#f44336; color:white; }
+  .yellow { background:#FFC107; color:black; }
+  .quote-card {
+    background: #333;
+    padding: 12px 15px;
+    border-radius: 10px;
+    margin: 0 15px 15px 15px;
+    font-style: italic;
+    color: #ffeb3b;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  }
+
+  /* Hamburger */
+    .hamburger {
+      position: fixed;
+      top: 15px; left: 15px;
+      z-index: 3000;
+      cursor: pointer;
+      font-size: 28px;
+      color: #00ffff;
+      background: #222;
+      padding: 10px 14px;
+      border-radius: 8px;
+      user-select: none;
+      transition: 0.3s;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    .hamburger:hover { background: #ffeb3b; color: #111; transform: scale(1.1); }
+  /* Controls */
+  .controls {
+    padding:10px; background:#1a1a1a; color:white; display:flex; gap:10px; flex-wrap:wrap; position:relative; z-index:1000;
+  }
+  input, button, select { padding:6px; border-radius:5px; border:1px solid #555; background:#2a2a2a; color:white; }
+
+  /* Map */
+  #map { flex:1; height:100%; }
+
+  #distanceBox {
+    position:absolute; top:60px; right:20px; background: rgba(0,0,0,0.7); color:white;
+    padding:8px 12px; border-radius:8px; z-index:1000;
+  }
+
+  /* Leaflet routing text black */
+  .leaflet-routing-container, .leaflet-routing-container * {
+    color:black !important;
+    font-weight:500;
+  }
+</style>
+</head>
+<body>
+
+<!-- Hamburger -->
+<div class="hamburger" onclick="toggleSidebar()">&#9776;</div>
+
+<!-- Sidebar (first code style) -->
+<div id="mySidebar" class="sidebar">
+  <h2>Features</h2>
+  <a href="home.html"><i class="fas fa-home"></i> Home</a>
+  <a href="live.html"><i class="fa-solid fa-triangle-exclamation"></i> Disaster Zone Detection</a>
+  <a href="alternate.html"><i class="fa-solid fa-route"></i> Alternate Route Suggestion</a>
+  <a href="borderalert.html"><i class="fa-solid fa-map"></i> National Border Alert</a>
+  <a href="emergence.html"><i class="fa-solid fa-ambulance"></i> Emergency Services Locator</a>
+  <a href="safetytip.html"><i class="fa-solid fa-shield-halved"></i> Safety Tips & Guides</a>
+
+  <hr style="border:1px solid #444; margin:20px 0;">
+  <h3>Emergency Numbers</h3>
+  <ul>
+    <li>🚑 Ambulance: <span class="badge green">108 / 102</span></li>
+    <li>👮 Police: <span class="badge blue">100</span></li>
+    <li>🔥 Fire: <span class="badge red">101</span></li>
+    <li>🌐 NDRF: <span class="badge yellow">1078</span></li>
+  </ul>
+
+  <hr style="border:1px solid #444; margin:20px 0;">
+  <h3>Quote of the Day</h3>
+  <div class="quote-card">"Preparedness today saves lives tomorrow."</div>
+</div>
+
+<!-- Controls -->
+<div class="controls">
+  <input id="source" placeholder="Source Location">
+  <input id="destination" placeholder="Destination Location">
+  <input id="via" placeholder="Optional Via (Intermediate)">
+  <select id="serviceType">
+    <option value="all">All Services</option>
+    <option value="police">Police</option>
+    <option value="hospital">Hospital</option>
+    <option value="fire_station">Fire Station</option>
+    <option value="pharmacy">Pharmacy</option>
+    <option value="ambulance">Ambulance</option>
+    <option value="shelter">Disaster Shelter</option>
+    <option value="rescue">Rescue Station</option>
+  </select>
+  <button onclick="showRouteServices()">Show Services</button>
+  <button id="micButton">&#127908;</button>
+</div>
+
+<!-- Map -->
+<div id="map"></div>
+<div id="distanceBox">Distance: 0 km | ETA: 0 min</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+<script src="https://unpkg.com/leaflet-polylinedecorator/dist/leaflet.polylineDecorator.min.js"></script>
+
+<script>
+// Map setup
+const map = L.map('map').setView([20.5937,78.9629],5);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+
+let routingControl=null, serviceMarkers=[], userMarker=null, arrowLayer=null;
+let routeInstructions=[], currentStepIndex=0;
+
+const serviceTypes=["police","hospital","fire_station","pharmacy","ambulance","shelter","rescue"];
+const serviceIcons={
+  police:L.icon({iconUrl:'https://img.icons8.com/color/48/000000/police-badge.png',iconSize:[32,32],iconAnchor:[16,32],popupAnchor:[0,-32]}),
+  hospital:L.icon({iconUrl:'https://img.icons8.com/color/48/000000/hospital-room.png',iconSize:[32,32],iconAnchor:[16,32],popupAnchor:[0,-32]}),
+  fire_station:L.icon({iconUrl:'https://img.icons8.com/color/48/000000/fire-station.png',iconSize:[32,32],iconAnchor:[16,32],popupAnchor:[0,-32]}),
+  pharmacy:L.icon({iconUrl:'https://img.icons8.com/color/48/000000/pill.png',iconSize:[32,32],iconAnchor:[16,32],popupAnchor:[0,-32]}),
+  ambulance:L.icon({iconUrl:'https://img.icons8.com/color/48/000000/ambulance.png',iconSize:[32,32],iconAnchor:[16,32],popupAnchor:[0,-32]}),
+  shelter:L.icon({iconUrl:'https://img.icons8.com/color/48/000000/home.png',iconSize:[32,32],iconAnchor:[16,32],popupAnchor:[0,-32]}),
+  rescue:L.icon({iconUrl:'https://img.icons8.com/color/48/000000/lifebuoy.png',iconSize:[32,32],iconAnchor:[16,32],popupAnchor:[0,-32]}),
+  user:L.icon({iconUrl:'https://img.icons8.com/color/48/000000/marker.png',iconSize:[32,32],iconAnchor:[16,32],popupAnchor:[0,-32]})
+};
+
+// Sidebar toggle
+function toggleSidebar(){
+  const sidebar = document.getElementById("mySidebar");
+  sidebar.style.width = sidebar.style.width==="250px" ? "0" : "250px";
+}
+
+// Clear previous markers and route
+function clearMarkers(){
+  serviceMarkers.forEach(m=>map.removeLayer(m));
+  serviceMarkers=[];
+  if(routingControl){ map.removeControl(routingControl); routingControl=null; }
+  if(userMarker){ map.removeLayer(userMarker); userMarker=null; }
+  if(arrowLayer){ map.removeLayer(arrowLayer); arrowLayer=null; }
+}
+
+// Fallback contact
+function getFallbackContact(type){
+  switch(type){
+    case "police": return "100 / 112";
+    case "hospital": return "102 / 108";
+    case "fire_station": return "101";
+    case "ambulance": return "108";
+    case "shelter": return "N/A";
+    case "rescue": return "N/A";
+    case "pharmacy": return "N/A";
+    default: return "N/A";
+  }
+}
+
+// Get coordinates from location name
+async function getCoords(location){
+  const res=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}`);
+  const data=await res.json();
+  if(data.length===0) throw new Error("Location not found: "+location);
+  return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+}
+
+// Fetch nearby services
+async function fetchServices(lat, lon, type){
+  let query='';
+  if(type==='all'){
+    query=`[out:json][timeout:25];(node(around:2000,${lat},${lon})[amenity~"police|hospital|fire_station|pharmacy|ambulance|shelter|rescue"];way(around:2000,${lat},${lon})[amenity~"police|hospital|fire_station|pharmacy|ambulance|shelter|rescue"];);out center tags;`;
+  } else {
+    query=`[out:json][timeout:25];(node(around:2000,${lat},${lon})[amenity=${type}];way(around:2000,${lat},${lon})[amenity=${type}];);out center tags;`;
+  }
+  try{
+    const res=await fetch("https://overpass-api.de/api/interpreter",{method:'POST',headers:{'Content-Type':'text/plain'},body:query});
+    const text=await res.text();
+    let data;
+    try{ data=JSON.parse(text); } catch(e){ return []; }
+    return data.elements.map(el=>{
+      if(el.type==='node') return {lat:el.lat, lon:el.lon, tags:el.tags||{}};
+      if(el.type==='way' && el.center) return {lat:el.center.lat, lon:el.center.lon, tags:el.tags||{}};
+      return null;
+    }).filter(el=>el!==null);
+  } catch(err){ return []; }
+}
+
+// Add marker
+function addMarker(lat, lon, name, contact, type){
+  const icon=serviceIcons[type]||serviceIcons['police'];
+  const m=L.marker([lat,lon],{icon}).addTo(map).bindPopup(`${name} - ${contact}`);
+  serviceMarkers.push(m);
+}
+
+// Sample points along route
+function sampleRouteCoordinates(routeCoordinates, step=5){
+  const sampled=[];
+  for(let i=0;i<routeCoordinates.length;i+=step) sampled.push(routeCoordinates[i]);
+  return sampled;
+}
+
+// Show route and services
+async function showRouteServices(){
+  clearMarkers();
+  const source=document.getElementById('source').value.trim();
+  const destination=document.getElementById('destination').value.trim();
+  const via=document.getElementById('via').value.trim();
+  const serviceType=document.getElementById('serviceType').value;
+  if(!source||!destination){ alert("Enter both source and destination"); return; }
+
+  try{
+    const srcCoords=await getCoords(source);
+    const destCoords=await getCoords(destination);
+    let waypoints=[L.latLng(srcCoords[0], srcCoords[1])];
+    if(via){
+      const viaCoords=await getCoords(via);
+      waypoints.push(L.latLng(viaCoords[0], viaCoords[1]));
+    }
+    waypoints.push(L.latLng(destCoords[0], destCoords[1]));
+
+    routingControl=L.Routing.control({
+      waypoints:waypoints,
+      routeWhileDragging:false,
+      show: false,
+      createMarker:function(){ return null; }
+    }).addTo(map);
+
+    routingControl.on('routesfound', async function(e){
+      const route=e.routes[0];
+      const coords=route.coordinates.map(c=>[c.lat,c.lng]);
+      const sampled=sampleRouteCoordinates(coords, Math.max(Math.floor(coords.length/15),1));
+      for(const pt of sampled){
+        const services=await fetchServices(pt[0],pt[1],serviceType);
+        for(const s of services){
+          const name=s.tags.name||"Unknown";
+          const contact=s.tags.phone||s.tags.contact||getFallbackContact(serviceType);
+          addMarker(s.lat,s.lon,name,contact,s.tags.amenity||serviceType);
+        }
+      }
+      map.fitBounds(coords);
+      document.getElementById('distanceBox').innerText=`Distance: ${(route.summary.totalDistance/1000).toFixed(2)} km | ETA: ${(route.summary.totalTime/60).toFixed(0)} min`;
+    });
+
+  } catch(err){
+    alert("Error: "+err.message);
+  }
+}
+
+// Speech recognition for source/destination
+const micBtn=document.getElementById('micButton');
+const SpeechRecognition=window.SpeechRecognition || window.webkitSpeechRecognition;
+if(SpeechRecognition){
+  const recognition=new SpeechRecognition();
+  recognition.continuous=false; recognition.lang='en-US';
+  micBtn.onclick=()=>{ recognition.start(); }
+  recognition.onresult=function(event){
+    const text=event.results[0][0].transcript;
+    if(!document.getElementById('source').value) document.getElementById('source').value=text;
+    else document.getElementById('destination').value=text;
+  }
+}
+
+// User location marker
+if(navigator.geolocation){
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const {latitude,longitude}=pos.coords;
+    userMarker=L.marker([latitude,longitude],{icon:serviceIcons['user']}).addTo(map).bindPopup("You are here").openPopup();
+    map.setView([latitude,longitude],13);
+  });
+}
+</script>
+
+</body>
+</html>

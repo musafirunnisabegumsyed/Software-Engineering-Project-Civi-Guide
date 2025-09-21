@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Alternate Routes</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { 
+      margin:0; 
+      font-family: Arial, sans-serif; 
+      background:#121212; 
+      color:white; 
+      overflow-x: hidden;
+    }
+    #map { 
+      height: 80vh; 
+      width: 100%; 
+    }
+    
+    h2.animated-heading {
+      text-align:center; 
+      padding:20px; 
+      font-size: 28px; 
+      color:#ff9800;
+      animation: glow 2s infinite alternate;
+    }
+    @keyframes glow {
+      0% { text-shadow: 0 0 5px #ff9800, 0 0 10px #ff9800; }
+      100% { text-shadow: 0 0 20px #fff, 0 0 40px #ff9800; }
+    }
+
+   /* Sidebar */
+  .sidebar {
+    height: 100%;
+    width: 0;
+    position: fixed;
+    top: 0; left: 0;
+    background: linear-gradient(145deg, #111, #222);
+    overflow-x: hidden;
+    transition: 0.3s;
+    padding-top: 60px;
+    z-index: 2000;
+    color: white;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.7);
+    border-right: 1px solid #333;
+  }
+  .sidebar h2, .sidebar h3 {
+    padding-left: 15px;
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #00ffff;
+  }
+  .sidebar a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    text-decoration: none;
+    font-size: 16px;
+    color: white;
+    transition: 0.3s ease;
+    border-radius: 6px;
+  }
+  .sidebar a:hover {
+    background: #00ffff;
+    color: #111;
+    font-weight: bold;
+    transform: scale(1.05);
+  }
+  .sidebar a i {
+    width: 24px;
+    text-align: center;
+    font-size: 18px;
+    color: #00ffff;
+  }
+  .sidebar ul { list-style: none; padding: 0; margin: 0 0 15px 15px; line-height: 1.8; }
+  .sidebar p { padding: 0 15px 15px 15px; font-style: italic; color: #ddd; }
+  .badge { padding: 3px 8px; border-radius: 6px; font-weight: bold; margin-left: 5px; }
+  .green { background:#4CAF50; color:white; }
+  .blue { background:#2196F3; color:white; }
+  .red { background:#f44336; color:white; }
+  .yellow { background:#FFC107; color:black; }
+  .quote-card {
+    background: #333;
+    padding: 12px 15px;
+    border-radius: 10px;
+    margin: 0 15px 15px 15px;
+    font-style: italic;
+    color: #ffeb3b;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  }
+
+    /* Hamburger */
+    .hamburger {
+      position: fixed;
+      top: 15px; left: 15px;
+      z-index: 3000;
+      cursor: pointer;
+      font-size: 28px;
+      color: #00ffff;
+      background: #222;
+      padding: 10px 14px;
+      border-radius: 8px;
+      user-select: none;
+      transition: 0.3s;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    .hamburger:hover { background: #ffeb3b; color: #111; transform: scale(1.1); }
+
+    /* Routing container dark theme */
+    .leaflet-routing-container {
+      background: #121212 !important;
+      color: white !important;
+      border: 1px solid #333 !important;
+    }
+    .leaflet-routing-container .leaflet-routing-instructions li:hover {
+      background: #b71c57 !important;
+      color:white !important;
+      cursor:pointer;
+    }
+    .leaflet-routing-container::-webkit-scrollbar {
+      width: 8px;
+    }
+    .leaflet-routing-container::-webkit-scrollbar-thumb {
+      background-color: #555;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="hamburger" onclick="toggleSidebar()">&#9776;</div>
+
+  <!-- Sidebar -->
+    <div id="mySidebar" class="sidebar">
+      <h2>Features</h2>
+      <a href="home.html"><i class="fas fa-home"></i> Home</a>
+      <a href="live.html"><i class="fa-solid fa-triangle-exclamation"></i> Disaster Zone Detection</a>
+      <a href="alternate.html"><i class="fa-solid fa-route"></i> Alternate Route Suggestion</a>
+      <a href="borderalert.HTML"><i class="fa-solid fa-map"></i> National Border Alert</a>
+      <a href="emergence.html"><i class="fa-solid fa-ambulance"></i> Emergency Services Locator</a>
+      <a href="safetytip.html"><i class="fa-solid fa-shield-halved"></i> Safety Tips & Guides</a>
+
+      <hr style="border:1px solid #444; margin:20px 0;">
+      <h3>Emergency Numbers</h3>
+      <ul>
+        <li>🚑 Ambulance: <span class="badge green">108 / 102</span></li>
+        <li>👮 Police: <span class="badge blue">100</span></li>
+        <li>🔥 Fire: <span class="badge red">101</span></li>
+        <li>🌐 NDRF: <span class="badge yellow">1078</span></li>
+      </ul>
+
+      <hr style="border:1px solid #444; margin:20px 0;">
+      <h3>Quote of the Day</h3>
+      <div class="quote-card">"Preparedness today saves lives tomorrow."</div>
+    </div>
+
+  <h2 class="animated-heading">🚧Suggested Alternate Route for Your Safety</h2>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+  <script>
+    function toggleSidebar() {
+      const sidebar = document.getElementById("mySidebar");
+      sidebar.style.width = (sidebar.style.width === "250px") ? "0" : "250px";
+    }
+
+    var map = L.map('map').setView([22.57, 88.36], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    const params = new URLSearchParams(window.location.search);
+    const srcLat = parseFloat(params.get("srcLat"));
+    const srcLng = parseFloat(params.get("srcLng"));
+    const destLat = parseFloat(params.get("destLat"));
+    const destLng = parseFloat(params.get("destLng"));
+
+    if (!srcLat || !srcLng || !destLat || !destLng) {
+      alert("Coordinates missing! Go back and try again.");
+    }
+
+    const routes = [
+      [ [srcLat, srcLng], [destLat, destLng] ],
+      [ [srcLat, srcLng], [21.5, 87.0], [destLat, destLng] ],
+      [ [srcLat, srcLng], [21.0, 85.0], [destLat, destLng] ]
+    ];
+
+    routes.forEach(route => {
+      L.Routing.control({
+        waypoints: route.map(r => L.latLng(r[0], r[1])),
+        lineOptions: { styles: [{color: "#ff9800", opacity: 0.6, weight: 6}] },
+        createMarker: function() { return null; },
+        addWaypoints: false,
+        routeWhileDragging: false,
+        collapsible: true
+      }).addTo(map);
+    });
+  </script>
+</body>
+</html>
